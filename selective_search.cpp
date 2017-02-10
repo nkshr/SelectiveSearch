@@ -135,10 +135,9 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
   }
 
   time = 0;
-  last_vindex = 0;
-  for(int i = 0; i < num_segs; ++i, ++last_vindex){
-    vertexs.push_back(Vertex(last_vindex, time, this));
-    //vertexs[i].points_set.push_back(&points);
+  vindex = 0;
+  for(int i = 0; i < num_segs; ++i, ++vindex){
+    vertexs.push_back(new Vertex(vindex, time, this));
   }
 
   ////create adjacent table
@@ -162,18 +161,18 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
       if(i != gs_img.rows -1  && pgs_img[j + gs_img.cols] != pgs_img[j])
 	adj_table[pgs_img[j]][pgs_img[j + gs_img.cols]] = 1;
 
-      Vertex &vertex = vertexs[pgs_img[j]];
-      vertex.points.push_back(i*gs_img.cols+ j);
+      Vertex * vertex = vertexs[pgs_img[j]];
+      vertex->points.push_back(i*gs_img.cols+ j);
       
-      if(vertex.top_left.x > j)
-	vertex.top_left.x = j;
-      else if(vertex.bottom_right.x < j)
-	vertex.bottom_right.x = j;
+      if(vertex->top_left.x > j)
+	vertex->top_left.x = j;
+      else if(vertex->bottom_right.x < j)
+	vertex->bottom_right.x = j;
 
-      if(vertex.top_left.y > i)
-	vertex.top_left.y = i;
-      else if(vertex.bottom_right.y < i)
-	vertex.bottom_right.y = i;
+      if(vertex->top_left.y > i)
+	vertex->top_left.y = i;
+      else if(vertex->bottom_right.y < i)
+	vertex->bottom_right.y = i;
     }
   }
 
@@ -186,7 +185,7 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
   writeVertexs(buf);
 #endif
 
-  ////calc orientation
+  ////calculate orientation
   split(img, this->planes);
   for(int i = 0; i < 3; ++i){
     Sobel(planes[i], dx_imgs[i], CV_32F, 1, 0);
@@ -219,7 +218,7 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
 #endif
 
   for(int i = 0; i < vertexs.size(); ++i){
-    vertexs[i].init();
+    vertexs[i]->init();
   }
   
   //initialize edges
@@ -227,8 +226,8 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
     for(int j = i + 1; j < adj_table.size(); ++j){
       if(adj_table[i][j]){
 	Edge edge(this);
-	edge.from = &vertexs[i];
-	edge.to = &vertexs[j];
+	edge.from = vertexs[i];
+	edge.to = vertexs[j];
 	edge.calcSim();
 	//printf("edge.from %p\n", (void*)edge.from);
 	edges.push_back(edge);
@@ -265,14 +264,13 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
     list<Edge>::iterator it = edges.begin();
     Edge edge = edges.front();;
     
-    Vertex mv;
-    mergeVertexs(*(edge.from), *(edge.to), mv);
+    Vertex *mv =  mergeVertexs(edge.from, edge.to);
     removeEdges(edge);
 
     vertexs.push_back(mv);
     
-    updateAdjTable(mv);
-    addEdges(mv);
+    updateAdjTable(*mv);
+    addEdges(*mv);
     edges.sort(SelectiveSearch::compSims);
 
 #ifdef DEBUG_SS
@@ -282,7 +280,7 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
     Mat seg_img;
     createSegImg(seg_img);
     visSeg(seg_img, vis_img);
-    rectangle(vis_img, mv.region, Scalar(0, 0, 0));
+    rectangle(vis_img, mv->region, Scalar(0, 0, 0));
     sprintf(buf, "vis_img_%03d.png", time);
     imwrite(buf, vis_img);
 
@@ -341,46 +339,46 @@ Mat &SelectiveSearch::getGSImage(){
   return gs_img;
 }
 
-void SelectiveSearch::mergeVertexs(Vertex &v0, Vertex &v1, Vertex &v){
+SelectiveSearch::Vertex *  SelectiveSearch::mergeVertexs(Vertex  * v0, Vertex * v1){
 #ifdef DEBUG_SS
-  DMsg dmsg("Entering mergeVertexs");
-  cout << v0.index << "th and " << v1.index << "th are merged." << endl;
+  DMsg dmsg("mergeVertexs");
+  cout << v0->index << "th and " << v1->index << "th are merged." << endl;
 #endif 
   
-  v =  Vertex(last_vindex++, time, this);
-
+  Vertex * v =  new Vertex(vindex++, time, this);
 #ifdef DEBUG_SS
-  cout << "vertex " << v.index << " was constructed at time " << time << endl;
+  cout << "vertex " << v->index << " was constructed at time " << time << endl;
 #endif 
   
-  for(int i = 1; i < v0.sub_vertexs.size(); ++i){
-    v.sub_vertexs.push_back(v0.sub_vertexs[i]);
+  for(int i = 1; i < v0->sub_vertexs.size(); ++i){
+    v->sub_vertexs.push_back(v0->sub_vertexs[i]);
   }
 
-  for(int i = 1; i < v1.sub_vertexs.size(); ++i){
-    v.sub_vertexs.push_back(v1.sub_vertexs[i]);
+  for(int i = 1; i < v1->sub_vertexs.size(); ++i){
+    v->sub_vertexs.push_back(v1->sub_vertexs[i]);
   }
 
-  v.sub_vertexs.push_back(v0.sub_vertexs[0]);
-  v.sub_vertexs.push_back(v1.sub_vertexs[0]);
+  v->sub_vertexs.push_back(v0->sub_vertexs[0]);
+  v->sub_vertexs.push_back(v1->sub_vertexs[0]);
 
-  for(int i = 0; i < v0.points_set.size(); ++i){
-    v.points_set.push_back(v0.points_set[i]);
+  for(int i = 0; i < v0->points_set.size(); ++i){
+    v->points_set.push_back(v0->points_set[i]);
   }
 
-  for(int i = 0; i < v1.points_set.size(); ++i){
-    v.points_set.push_back(v1.points_set[i]);
+  for(int i = 0; i < v1->points_set.size(); ++i){
+    v->points_set.push_back(v1->points_set[i]);
   }
 
-  v0.tsurv.tend = time;
+  v0->tsurv.tend = time;
 
-  v1.tsurv.tend = time;
+  v1->tsurv.tend = time;
 
-  v.size = v0.size + v1.size;
-  v.region = v0.region | v1.region;
-  propagateTexHist(v0, v1, v);
+  v->size = v0->size + v1->size;
+  v->region = v0->region | v1->region;
+  propagateTexHist(*v0, *v1, *v);
  
-  propagateColHist(v0, v1, v);
+  propagateColHist(*v0, *v1, *v);
+  return v;
 }
 
 vector<Rect> SelectiveSearch::getRegions(const int lvl){
@@ -571,15 +569,15 @@ void SelectiveSearch::createSegImg(Mat &seg_img){
   seg_img.create(gs_img.size(), CV_32SC1);
   int * pseg_img = seg_img.ptr<int>(0);
   int count = 0;
-  for(vector<Vertex>::iterator it = vertexs.begin(); it != vertexs.end(); ++it){
-    if(!isAlive(*it)){
+  for(vector<Vertex*>::iterator it = vertexs.begin(); it != vertexs.end(); ++it){
+    if(!isAlive(*(*it))){
       continue;
     }
     
-    for(int i = 0; i < it->points_set.size(); ++i){
-      vector<int> points = (*it->points_set[i]);
-      for(int j = 0; j < points.size(); ++j){
-    	pseg_img[points[j]] = it->index;
+    for(int i = 0; i < (*it)->points_set.size(); ++i){
+      vector<int> * points = (*it)->points_set[i];
+      for(int j = 0; j < points->size(); ++j){
+    	pseg_img[(*points)[j]] = (*it)->index;
       }
     }
     count++;
@@ -600,7 +598,7 @@ bool SelectiveSearch::isAlive(const Vertex &v){
 }
 
 void SelectiveSearch::updateAdjTable(const Vertex &v){
-  DMsg dmsg("Entering updateAdjTable");
+  DMsg dmsg("updateAdjTable");
   vector<int>::const_reverse_iterator rit = v.sub_vertexs.rbegin();
   const int vindex0 = *(rit);
   const int vindex1 = *(++rit);
@@ -622,7 +620,7 @@ void SelectiveSearch::updateAdjTable(const Vertex &v){
 
     // if(!vsub)
     //   cout << i << "th vertex is vsub" << endl;
-    if((adj_table[vindex0][i] || adj_table[vindex1][i]) && !vsub && isAlive(vertexs[i])){
+    if((adj_table[vindex0][i] || adj_table[vindex1][i]) && !vsub && isAlive(*(vertexs[i]))){
 #ifdef DEBUG_SS
       cout << i << "th vertex is accepted." << endl;
 #endif
@@ -653,8 +651,8 @@ void SelectiveSearch::addEdges(Vertex &v){
   for(int i = 0; i < adj_table[v.index].size(); ++i){
     if(adj_table[v.index][i] && v.index != i){
       Edge edge(this);
-      edge.from = &vertexs[v.index];
-      edge.to = &vertexs[i];
+      edge.from = vertexs[v.index];
+      edge.to = vertexs[i];
       edge.calcSim();
       edges.push_back(edge);
       count++;
@@ -744,11 +742,11 @@ bool SelectiveSearch::writeVertexs(char * fname){
     return false;
   }
 
-  vector <Vertex>::iterator it;
+  vector <Vertex*>::iterator it;
   for(it = vertexs.begin(); it != vertexs.end(); ++it){
-    ofs << "vertex : " << it->index << endl;
-    for(int i = 0; i < it->sub_vertexs.size(); ++i){
-      ofs << "\tsub vertex : " << it->sub_vertexs[i] << endl;
+    ofs << "vertex : " << (*it)->index << endl;
+    for(int i = 0; i < (*it)->sub_vertexs.size(); ++i){
+      ofs << "\tsub vertex : " << (*it)->sub_vertexs[i] << endl;
     }
   }
   ofs.close();
@@ -780,9 +778,9 @@ void SelectiveSearch::createRegions(){
   DMsg dmsg("createRegions");
   int vsz = vertexs.size();
   for(int i = 0; i < vsz; ++i){
-    Vertex &v = vertexs[i];
-    float pos_val = (v.tsurv.tstart - vsz) * rand()/(float)RAND_MAX;
-    regions.push_back(pair<float, Rect>(pos_val, v.region));
+    Vertex * v = vertexs[i];
+    float pos_val = (v->tsurv.tstart - vsz) * rand()/(float)RAND_MAX;
+    regions.push_back(pair<float, Rect>(pos_val, v->region));
   }
 
   regions.sort(compPosVals);
@@ -828,7 +826,7 @@ void SelectiveSearch::setMaxAdjTableSize(const int num){
   adj_table_size = num;
 }
 
-void SelectiveSearch::getVertexs(vector<Vertex> &vtxs){
+void SelectiveSearch::getVertexs(vector<Vertex*> &vtxs){
   vtxs = vertexs;
 }
 

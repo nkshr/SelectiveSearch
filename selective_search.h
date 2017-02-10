@@ -1,6 +1,9 @@
 #ifndef SELECTIVE_SEARCH
 #define SELECTIVE_SEARCH
 
+#include <opencv2/ximgproc/segmentation.hpp>
+using namespace cv::ximgproc::segmentation;
+
 Scalar color_mapping(int segment_id);
 Scalar hsv_to_rgb(Scalar c);
 
@@ -21,11 +24,12 @@ class SelectiveSearch{
     
     vector<int> points;
     vector<vector<int>* > points_set;
+    
     vector<int> sub_vertexs;
     ColHist col_hist;//color channel, color
     TexHist tex_hist;//color channel, orientation
     SelectiveSearch * ss;
-    Vertex(){};
+
     Vertex(const int index, const int tstart, SelectiveSearch * ss);
 
     struct tsurvival{
@@ -85,7 +89,7 @@ class SelectiveSearch{
   Mat& getGSImage();
   vector<Rect> getRegions(const int lvl);
   void getRegions(vector<Rect> &regions);
-  void getVertexs(vector<Vertex> &vtxs);
+  void getVertexs(vector<Vertex*> &vtxs);
   
  private:
   //parameter for GraphSegmentation
@@ -100,9 +104,9 @@ class SelectiveSearch{
   float tex_sim_weight;
   
   int time;
-  int last_vindex;
   int adj_table_size;
   int vertexs_size;
+  int vindex;
 
   float max_overlap;
 
@@ -113,7 +117,7 @@ class SelectiveSearch{
   Mat dy_imgs[3];
   Mat ori_imgs[3];
   Mat gs_img;
-  vector<Vertex> vertexs;
+  vector<Vertex*> vertexs;
   vector<vector<bool> > adj_table;
   list<Edge> edges;
   Ptr<GraphSegmentation> gs;
@@ -127,7 +131,7 @@ class SelectiveSearch{
  
   void hierarGrouping(const Mat &img);
 
-  void mergeVertexs(Vertex &v0, Vertex &v1, Vertex &v);
+  SelectiveSearch::Vertex* mergeVertexs(Vertex *v0, Vertex *v1);
 
   void updateAdjTable(const Vertex &v);
   

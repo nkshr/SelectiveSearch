@@ -10,7 +10,6 @@ using namespace cv::ximgproc::segmentation;
 
 #include "selective_search.h"
 
-
 SelectiveSearch::Vertex::Vertex(const int _index, const int tstart, SelectiveSearch * ss): size(0), index(_index), top_left(INT_MAX, INT_MAX), bottom_right(0, 0), ss(ss), /*base0(NULL), base1(NULL),*/ tsurv(tstart, INT_MAX){
   sub_vertexs.push_back(index);
 }

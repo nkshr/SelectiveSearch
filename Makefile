@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DEBUG_SS = n
+DEBUG_SS = y
 TIME_SS = y
 
 SRCS = main.cpp  selective_search selective_search_edge.cpp selective_search_vertex.cpp 
@@ -16,9 +16,8 @@ OPENCV_LIBS = `pkg-config --libs-only-l opencv`
 
 CXX = /usr/bin/c++
 
-DEFINES = -DCAFFE_VERSION=1.0.0-rc3 -DGTEST_USE_OWN_TR1_TUPLE -DUSE_LEVELDB -DUSE_LMDB -DUSE_OPENCV -DWITH_PYTHON_LAYER #-DDEBUG_SS
 ifeq ($(DEBUG_SS), y)
-	CXX_DEFINES += -DDEBUG_SS
+	DEFINES += -DDEBUG_SS
 endif
 
 ifeq ($(TIME_SS), y)
