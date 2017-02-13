@@ -76,68 +76,73 @@ Scalar color_mapping(int segment_id) {
   return hsv_to_rgb(Scalar(fmod(base, 1.2), 0.95, 0.80));
 }
 
-SelectiveSearch::SelectiveSearch(const float k,
-				 const int min_size,
-				 const double sigma):  k(k), min_size(min_size),
-						       sigma(sigma), col_sim_weight(1.f),
-						       fill_sim_weight(1.f),
-						       size_sim_weight(1.f),
-						       tex_sim_weight(1.f),
-						       time(0), adj_table_size(100), vertexs_size(100), max_overlap(0.8){
-  init();
-  //regions.resize(1000);
-}
+// SelectiveSearch::SelectiveSearch(const float k,
+// 				 const int min_size,
+// 				 const double sigma):  k(k), min_size(min_size),
+// 						       sigma(sigma), col_sim_weight(1.f),
+// 						       fill_sim_weight(1.f),
+// 						       size_sim_weight(1.f),
+// 						       tex_sim_weight(1.f),
+// 						       time(0), adj_table_size(100), vertexs_size(100), max_overlap(0.8){
+//   init();
+//   //regions.resize(1000);
+// }
 
 SelectiveSearch::SelectiveSearch(): k(300), min_size(100), sigma(0.5),
 				    col_sim_weight(1.f),
 				    fill_sim_weight(1.f),
 				    size_sim_weight(1.f),
 				    tex_sim_weight(1.f),
-				    time(0), adj_table_size(100),
-				    vertexs_size(100),
+				    time(0), /*adj_table_size(100),*/
+				    /*vertexs_size(100),*/
 				    max_overlap(0.8){
-  init();
 }
 
-void SelectiveSearch::init(){
-  gs = createGraphSegmentation();
-  gs->setK(k);
-  gs->setMinSize(min_size);
-  gs->setSigma(sigma);
-}
 
 void SelectiveSearch::hierarGrouping(const Mat &img){
   //initialize vertexs
 #ifdef TIME_SS
   clock_t tstart = clock();
-#endif  
+#endif
+  gs = createGraphSegmentation();
+  gs->setK(k);
+  gs->setMinSize(min_size);
+  gs->setSigma(sigma);
   gs->processImage(img, gs_img);
+
   double min, max;
   minMaxLoc(gs_img, &min, &max);
 
   int num_segs = (int)max + 1;
   vector<int> regions;
-  vertexs.reserve(vertexs_size);
-  vertexs.resize(0);
+  
   
 #ifdef DEBUG_SS
   cout << "num_segs : " << num_segs << endl;
 #endif
 
-  adj_table.reserve(adj_table_size);
-  adj_table.resize(0);
+  num_vertexs = num_segs * 2 - 1;
+
+  //vertexs.reserve(num_vertexs);
+  //vertexs.resize(0);
+  vertexs.resize(num_vertexs, NULL);
+
+  //adj_table.reserve(adj_table_size);
+  adj_table.resize(num_vertexs);
   
-  for(int i = 0; i < num_segs; ++i){
-    vector<bool> buf;
-    //buf.reserve(adj_table_size);
-    buf.resize(num_segs, false);
-    adj_table.push_back(buf);
+  for(int i = 0; i < num_vertexs; ++i){
+    adj_table[i].resize(num_vertexs, false);
+    // vector<bool> buf;
+    // buf.reserve(adj_table_size);
+    // buf.resize(num_segs, false);
+    // adj_table.push_back(buf);
   }
 
   time = 0;
   vindex = 0;
   for(int i = 0; i < num_segs; ++i, ++vindex){
-    vertexs.push_back(new Vertex(vindex, time, this));
+    //vertexs.push_back(new Vertex(vindex, time, this));
+    vertexs[i] = new Vertex(vindex, time, this);
   }
 
   ////create adjacent table
@@ -217,7 +222,7 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
   tstart = clock();
 #endif
 
-  for(int i = 0; i < vertexs.size(); ++i){
+  for(int i = 0; i < num_segs; ++i){
     vertexs[i]->init();
   }
   
@@ -225,17 +230,17 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
   for(int i = 0; i < adj_table.size(); ++i){
     for(int j = i + 1; j < adj_table.size(); ++j){
       if(adj_table[i][j]){
-	Edge edge(this);
-	edge.from = vertexs[i];
-	edge.to = vertexs[j];
-	edge.calcSim();
+	Edge * edge = new Edge(this);
+	edge->from = vertexs[i];
+	edge->to = vertexs[j];
+	edge->calcSim();
 	//printf("edge.from %p\n", (void*)edge.from);
 	edges.push_back(edge);
       }
     }
   }
 
-  edges.sort(SelectiveSearch::compSims);
+  edges.sort(compSims);
 
 #ifdef TIME_SS
   tend = clock();
@@ -255,23 +260,25 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
   sprintf(buf, "edges_%03d.txt", time);
   writeEdges(buf);
 #endif  
-  time++;
-  while(edges.size() != 0){
+  //time++;
+  //while(edges.size() != 0){
+  for(int i = num_segs; edges.size() != 0; ++i){
 #ifdef DEBUG_SS
     cout << "num edges : " << edges.size() << endl;
 #endif 
-
-    list<Edge>::iterator it = edges.begin();
-    Edge edge = edges.front();;
+    time++;
+    list<Edge*>::iterator it = edges.begin();
+    Edge * edge = edges.front();;
     
-    Vertex *mv =  mergeVertexs(edge.from, edge.to);
-    removeEdges(edge);
+    Vertex *mv =  mergeVertexs(edge->from, edge->to);
+    removeEdges(*edge);
 
-    vertexs.push_back(mv);
-    
+    //vertexs.push_back(mv);
+    vertexs[i] = mv;
+
     updateAdjTable(*mv);
     addEdges(*mv);
-    edges.sort(SelectiveSearch::compSims);
+    edges.sort(compSims);
 
 #ifdef DEBUG_SS
     sprintf(buf, "adj_table_%03d.txt", time);
@@ -290,7 +297,7 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
     sprintf(buf, "vertexs_%03d.txt", time);
     writeVertexs(buf);
 #endif
-    time++;
+    //time++;
   }
 
 #ifdef TIME_SS
@@ -314,22 +321,22 @@ void SelectiveSearch::processImage(const Mat &img)
   hierarGrouping(img);
   createRegions();
   edges.clear();
-
+  
 #ifdef TIME_SS
   time_ofs.close();
 #endif
 }
 
-bool SelectiveSearch::compSims(const Edge &e0, const Edge &e1)
+bool SelectiveSearch::compSims(const Edge *e0, const Edge *e1)
 {
-  if(e0.sim < e1.sim)
+  if(e0->sim < e1->sim)
     return false;
   else
     return true;
 }
 
-bool SelectiveSearch::compPosVals(const pair<float, Rect> &r0, const pair<float, Rect> &r1){
-  if(r0.first < r1.first)
+bool SelectiveSearch::compPosVals(const pair<float, Rect> *r0, const pair<float, Rect> *r1){
+  if(r0->first < r1->first)
     return false;
   else
     return true;
@@ -350,16 +357,13 @@ SelectiveSearch::Vertex *  SelectiveSearch::mergeVertexs(Vertex  * v0, Vertex * 
   cout << "vertex " << v->index << " was constructed at time " << time << endl;
 #endif 
   
-  for(int i = 1; i < v0->sub_vertexs.size(); ++i){
-    v->sub_vertexs.push_back(v0->sub_vertexs[i]);
-  }
+  // for(int i = 0; i < v0->sub_vertexs.size(); ++i){
+  //   v->sub_vertexs.push_back(v0->sub_vertexs[i]);
+  // }
 
-  for(int i = 1; i < v1->sub_vertexs.size(); ++i){
-    v->sub_vertexs.push_back(v1->sub_vertexs[i]);
-  }
-
-  v->sub_vertexs.push_back(v0->sub_vertexs[0]);
-  v->sub_vertexs.push_back(v1->sub_vertexs[0]);
+  // for(int i = 0; i < v1->sub_vertexs.size(); ++i){
+  //   v->sub_vertexs.push_back(v1->sub_vertexs[i]);
+  // }
 
   for(int i = 0; i < v0->points_set.size(); ++i){
     v->points_set.push_back(v0->points_set[i]);
@@ -370,8 +374,10 @@ SelectiveSearch::Vertex *  SelectiveSearch::mergeVertexs(Vertex  * v0, Vertex * 
   }
 
   v0->tsurv.tend = time;
-
   v1->tsurv.tend = time;
+
+  v->base0 = v0->index;
+  v->base1 = v1->index;
 
   v->size = v0->size + v1->size;
   v->region = v0->region | v1->region;
@@ -388,11 +394,10 @@ vector<Rect> SelectiveSearch::getRegions(const int lvl){
 
 void SelectiveSearch::getRegions(vector<Rect> &_regions){
   DMsg dmsg("getRegions");
-  _regions.reserve(regions.size());
-  _regions.resize(0);
-  list<pair<float, Rect> >::iterator it = regions.begin();
-  for(; it != regions.end(); ++it){
-    _regions.push_back(it->second);
+  _regions.resize(regions.size());
+  list<pair<float, Rect>* >::iterator it = regions.begin();
+  for(int i = 0; it != regions.end(); ++it, ++i){
+    _regions[i] = (*it)->second;
   }
 }
 
@@ -570,6 +575,10 @@ void SelectiveSearch::createSegImg(Mat &seg_img){
   int * pseg_img = seg_img.ptr<int>(0);
   int count = 0;
   for(vector<Vertex*>::iterator it = vertexs.begin(); it != vertexs.end(); ++it){
+    if(!(*it)){
+      break;
+    }
+
     if(!isAlive(*(*it))){
       continue;
     }
@@ -599,28 +608,31 @@ bool SelectiveSearch::isAlive(const Vertex &v){
 
 void SelectiveSearch::updateAdjTable(const Vertex &v){
   DMsg dmsg("updateAdjTable");
-  vector<int>::const_reverse_iterator rit = v.sub_vertexs.rbegin();
-  const int vindex0 = *(rit);
-  const int vindex1 = *(++rit);
-  vector<bool> buf;
-  buf.reserve(adj_table_size);
-  buf.resize(v.index + 1, false);
-  adj_table.push_back(buf);
-  adj_table.back().resize(v.index + 1, false);
-  for(int i = 0; i < adj_table.size() - 1; ++i){
-    bool enbl = false;
-    bool vsub = false;
-    
-    
-    for(int j = 0; j < v.sub_vertexs.size(); ++j){
-	if(v.sub_vertexs[j] == i){
-	  vsub = true;
-	}
-    }
+  CV_Assert(v.base0 >= 0 && v.base1 >= 0);
 
-    // if(!vsub)
-    //   cout << i << "th vertex is vsub" << endl;
-    if((adj_table[vindex0][i] || adj_table[vindex1][i]) && !vsub && isAlive(*(vertexs[i]))){
+  // vector<int>::const_reverse_iterator rit = v.sub_vertexs.rbegin();
+  // const int vindex0 = *(rit);
+  // const int vindex1 = *(++rit);
+  const int vindex0 = v.base0;
+  const int vindex1 = v.base1;
+
+  // vector<bool> buf;
+  // buf.reserve(adj_table_size);
+  // buf.resize(v.index + 1, false);
+  // adj_table.push_back(buf);
+  // adj_table.back().resize(v.index + 1, false);
+
+  for(int i = 0; i < v.index/*i < adj_table.size() - 1*/; ++i){
+    bool enbl = false;
+    bool vsub = false;    
+    
+    // for(int j = 0; j < v.sub_vertexs.size(); ++j){
+    // 	if(v.sub_vertexs[j] == i){
+    // 	  vsub = true;
+    // 	}
+    // }
+
+    if((adj_table[vindex0][i] || adj_table[vindex1][i]) && /*!vsub &&*/ isAlive(*(vertexs[i]))){
 #ifdef DEBUG_SS
       cout << i << "th vertex is accepted." << endl;
 #endif
@@ -632,7 +644,8 @@ void SelectiveSearch::updateAdjTable(const Vertex &v){
 #endif
     }
 
-    adj_table[i].push_back(enbl);
+    //adj_table[i].push_back(enbl);
+    adj_table[i][v.index] = enbl;
     adj_table[v.index][i] = enbl;
 
     CV_Assert(i < adj_table.size());
@@ -650,15 +663,15 @@ void SelectiveSearch::addEdges(Vertex &v){
   int count = 0;
   for(int i = 0; i < adj_table[v.index].size(); ++i){
     if(adj_table[v.index][i] && v.index != i){
-      Edge edge(this);
-      edge.from = vertexs[v.index];
-      edge.to = vertexs[i];
-      edge.calcSim();
+      Edge * edge = new Edge(this);
+      edge->from = vertexs[v.index];
+      edge->to = vertexs[i];
+      edge->calcSim();
       edges.push_back(edge);
       count++;
 #ifdef DEBUG_SS
-      cout << "edge(" << edge.from->index
-	   << ", " << edge.to->index << ")"
+      cout << "edge(" << edge->from->index
+	   << ", " << edge->to->index << ")"
 	   << "is added." << endl;
 #endif
     }
@@ -691,17 +704,17 @@ bool SelectiveSearch::writeEdges(char * fname){
     return false;
   }
 
-  list<Edge>::iterator it;
+  list<Edge*>::iterator it;
   int i = 0;
   for(it = edges.begin(); it != edges.end(); ++it){
     ofs << "edge : " << i++ << endl;
-    ofs << "\tfrom : " << it->from->index << endl;
-    ofs << "\tto : " << it->to->index << endl;
-    ofs << "\tsim : " << it->sim << endl;
-    ofs << "\tcol_sim : " << it->col_sim << endl;
-    ofs << "\ttex_sim : " << it->tex_sim << endl;
-    ofs << "\tsize_sim : " << it->size_sim << endl;
-    ofs << "\tfill_sim : " << (*it).fill_sim << endl;
+    ofs << "\tfrom : " << (*it)->from->index << endl;
+    ofs << "\tto : " << (*it)->to->index << endl;
+    ofs << "\tsim : " << (*it)->sim << endl;
+    ofs << "\tcol_sim : " << (*it)->col_sim << endl;
+    ofs << "\ttex_sim : " << (*it)->tex_sim << endl;
+    ofs << "\tsize_sim : " << (*it)->size_sim << endl;
+    ofs << "\tfill_sim : " << (*it)->fill_sim << endl;
   }
   
   ofs.close();
@@ -714,14 +727,17 @@ void SelectiveSearch::removeEdges(Edge &e){
   SelectiveSearch::Vertex * from = e.from;
   SelectiveSearch::Vertex * to = e.to;
   //cout << e.to->index << endl;
-  for(list<Edge>::iterator it = edges.begin(); it != edges.end();){      
-    if(it->from == from ||
-       it->from->index == to->index ||
-       it->to == from ||
-       it->to->index == to->index){
+  for(list<Edge*>::iterator it = edges.begin(); it != edges.end();){      
+    SelectiveSearch::Vertex * it_from = (*it)->from;
+    SelectiveSearch::Vertex * it_to = (*it)->to;
+
+    if(it_from == from ||
+       it_from == to ||
+       it_to == from ||
+       it_to == to){
 #ifdef DEBUG_SS
-      cout << "edge(" << it->from->index
-	   << ", " << it->to->index << ")"
+      cout << "edge(" << it_from->index
+	   << ", " << it_to->index << ")"
 	   << "is removed." << endl;
 #endif
       it = edges.erase(it);
@@ -735,6 +751,7 @@ void SelectiveSearch::removeEdges(Edge &e){
 #endif
 }
 
+
 bool SelectiveSearch::writeVertexs(char * fname){
   ofstream ofs(fname);
   if(!ofs.is_open()){
@@ -745,14 +762,32 @@ bool SelectiveSearch::writeVertexs(char * fname){
   vector <Vertex*>::iterator it;
   for(it = vertexs.begin(); it != vertexs.end(); ++it){
     ofs << "vertex : " << (*it)->index << endl;
-    for(int i = 0; i < (*it)->sub_vertexs.size(); ++i){
-      ofs << "\tsub vertex : " << (*it)->sub_vertexs[i] << endl;
+
+    int base0 = (*it)->base0;
+    int base1 = (*it)->base1;
+    if(base0 < 0 || base1 < 0){
+      ofs.close();
+      return true;
     }
+    vertexs[base0]->writeSubVertexs(ofs);
+    vertexs[base1]->writeSubVertexs(ofs);
+    // for(int i = 0; i < (*it)->sub_vertexs.size(); ++i){
+    //   ofs << "\tsub vertex : " << (*it)->sub_vertexs[i] << endl;
+    // }
   }
   ofs.close();
   return true;
 }
 
+void SelectiveSearch::Vertex::writeSubVertexs(ofstream &ofs){
+  if(base0 < 0 || base1 < 0){
+    return;
+  }
+  ofs << "\tsub vertexs : " << base0 << endl;
+  ofs << "\tsub vertexs : " << base1 << endl;
+  ss->vertexs[base0]->writeSubVertexs(ofs);
+  ss->vertexs[base1]->writeSubVertexs(ofs);
+}
 //setter
 void SelectiveSearch::setColSimWeight(const float w){
   col_sim_weight = w;
@@ -779,29 +814,31 @@ void SelectiveSearch::createRegions(){
   int vsz = vertexs.size();
   for(int i = 0; i < vsz; ++i){
     Vertex * v = vertexs[i];
-    float pos_val = (v->tsurv.tstart - vsz) * rand()/(float)RAND_MAX;
-    regions.push_back(pair<float, Rect>(pos_val, v->region));
+    float pos_val = (v->tsurv.tstart - time) * rand()/(float)RAND_MAX;
+    regions.push_back(new pair<float, Rect>(pos_val, v->region));
   }
 
   regions.sort(compPosVals);
-  vector<list<pair<float, Rect> >::iterator > over_regions;
-  over_regions.reserve(100);
-  for(list<pair<float, Rect> >::iterator it0 = regions.begin(); it0 != regions.end(); ++it0){
-    list<pair<float, Rect> >::iterator it1 = it0;
+  // vector<list<pair<float, Rect> >*::iterator > over_regions;
+  // over_regions.reserve(100);
+
+  for(list<pair<float, Rect>* >::iterator it0 = regions.begin(); it0 != regions.end(); ++it0){
+    list<pair<float, Rect>* >::iterator it1 = it0;
     ++it1;
-    for(; it1 != regions.end(); ++it1){
-      if(calcOverlap(it0->second, it1->second) > max_overlap){
-    	over_regions.push_back(it1);
+    while(it1 != regions.end()){
+      if(calcOverlap((*it0)->second, (*it1)->second) > max_overlap){
+	it1 = regions.erase(it1);
+    	//over_regions.push_back(it1);
+      }
+      else{
+	++it1;
       }
     }
 
-    for(int i = 0; i < over_regions.size(); ++i){
-#ifdef DEBUG_SS
-      cout << "num over : " << over_regions.size() << endl;
-#endif
-      regions.erase(over_regions[i]);
-    }
-    over_regions.resize(0);
+    // for(int i = 0; i < over_regions.size(); ++i){
+    //   regions.erase(over_regions[i]);
+    // }
+    // over_regions.resize(0);
   }
 
 #ifdef TIME_SS
@@ -818,13 +855,13 @@ float SelectiveSearch::calcOverlap(const Rect &r0, const Rect &r1){
   return rand.area()/(float)ror.area();
 }
 
-void SelectiveSearch::setMaxNumVertexs(const int num){
-  vertexs_size = num;
-}
+// void SelectiveSearch::setMaxNumVertexs(const int num){
+//   vertexs_size = num;
+// }
 
-void SelectiveSearch::setMaxAdjTableSize(const int num){
-  adj_table_size = num;
-}
+// void SelectiveSearch::setMaxAdjTableSize(const int num){
+//   adj_table_size = num;
+// }
 
 void SelectiveSearch::getVertexs(vector<Vertex*> &vtxs){
   vtxs = vertexs;

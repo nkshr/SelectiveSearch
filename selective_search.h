@@ -17,15 +17,17 @@ class SelectiveSearch{
     //int id;
     int size;
     int index;
-    
+    int base0;
+    int base1;
+
     Point top_left;
     Point bottom_right;
     Rect region;
     
     vector<int> points;
     vector<vector<int>* > points_set;
-    
-    vector<int> sub_vertexs;
+    //vector<int> sub_vertexs;
+
     ColHist col_hist;//color channel, color
     TexHist tex_hist;//color channel, orientation
     SelectiveSearch * ss;
@@ -51,6 +53,8 @@ class SelectiveSearch{
     {
       return region;
     }
+
+    void writeSubVertexs(ofstream &ofs);
   };
 
   class Edge{
@@ -75,7 +79,7 @@ class SelectiveSearch{
   };
 
   SelectiveSearch();
-  SelectiveSearch(const float k, const int min_size, const double sigma);
+  //SelectiveSearch(const float k, const int min_size, const double sigma);
 
   void processImage(const Mat &img);
 
@@ -83,8 +87,8 @@ class SelectiveSearch{
   void setFillSimWeight(const float w);
   void setSizeSimWeight(const float w);
   void setTexSimWeight(const float w);
-  void setMaxNumVertexs(const int num);
-  void setMaxAdjTableSize(const int num);
+  //void setMaxNumVertexs(const int num);
+  //void setMaxAdjTableSize(const int num);
   
   Mat& getGSImage();
   vector<Rect> getRegions(const int lvl);
@@ -104,8 +108,9 @@ class SelectiveSearch{
   float tex_sim_weight;
   
   int time;
-  int adj_table_size;
-  int vertexs_size;
+  //int adj_table_size;
+  //int vertexs_size;
+  int num_vertexs;
   int vindex;
 
   float max_overlap;
@@ -119,10 +124,10 @@ class SelectiveSearch{
   Mat gs_img;
   vector<Vertex*> vertexs;
   vector<vector<bool> > adj_table;
-  list<Edge> edges;
+  list<Edge*> edges;
   Ptr<GraphSegmentation> gs;
 
-  void init();
+  //void init();
   
   void calcInitSims();
   
@@ -151,11 +156,11 @@ class SelectiveSearch{
 
   float calcOverlap(const Rect &r0, const Rect &r1);
   
-  static bool compSims(const Edge &e0, const Edge &e1);
-  static bool compPosVals(const pair<float, Rect> &r0, const pair<float, Rect> &r1);
+  static bool compSims(const Edge *e0, const Edge *e1);
+  static bool compPosVals(const pair<float, Rect> *r0, const pair<float, Rect> *r1);
   //void propagateSizeHist();
 
-  list<pair<float, Rect> > regions;
+  list<pair<float, Rect>* > regions;
 
 };
 

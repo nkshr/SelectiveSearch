@@ -24,7 +24,6 @@ int main(int argc, char ** argv){
   ss.setColSimWeight(1.f);
   ss.setTexSimWeight(1.f);
   ss.setSizeSimWeight(1.f);
-  ss.setMaxNumVertexs(10000);
   ss.processImage(img);
 
   return 0;
