@@ -10,28 +10,28 @@ using namespace cv::ximgproc::segmentation;
 
 #include "selective_search.h"
 
-SelectiveSearch::Vertex::Vertex(const int _index, const int tstart, SelectiveSearch * ss): size(0), index(_index), base0(-1), base1(-1), top_left(INT_MAX, INT_MAX), bottom_right(0, 0), ss(ss), tsurv(tstart, INT_MAX){
+SelectiveSearch::Vertex::Vertex(const int _index, SelectiveSearch * ss): is_alive(true), size(0), index(_index), base0(-1), base1(-1), top_left(INT_MAX, INT_MAX), bottom_right(0, 0), ss(ss){
 }
 
 void SelectiveSearch::Vertex::init(){
   calcColHist();
   calcTexHist();
-  size = points.size();
+  size = gs_pts.size();
   calcRegion();
-  points_set.push_back(&points);
+  gs_pts_set.push_back(&gs_pts);
 }
 
 void SelectiveSearch::Vertex::calcColHist(){
   DMsg dmsg("caclColHist");
   col_hist.resize(3);
   for(int i = 0; i < col_hist.size(); ++i)
-    col_hist[i].resize(25, 0.0);
+    col_hist[i].resize(25, 0.f);
 
   float istep = 25.f / 256.f;
-  for(int i = 0; i < points.size(); ++i){
+  for(int i = 0; i < gs_pts.size(); ++i){
     for(int j = 0; j < 3; ++j){
       const uchar * p = ss->planes[j].ptr<uchar>(0);
-      int bin = floor(p[points[i]] * istep);
+      int bin = floor(p[gs_pts[i]] * istep);
       if(!(bin < 25)){
 	cout << "bin : " <<  bin << endl;
 	exit(1);
@@ -41,7 +41,7 @@ void SelectiveSearch::Vertex::calcColHist(){
   }
 
   //normalize color histgram
-  float isize = 1.f/(float)(points.size()*3.f);
+  float isize = 1.f/(float)(gs_pts.size()*3.f);
   for(int i = 0; i < col_hist.size(); ++i){
     for(int j = 0; j < col_hist[i].size(); ++j){
       col_hist[i][j] *= isize;
@@ -57,14 +57,14 @@ void SelectiveSearch::Vertex::calcTexHist()
   for(int i = 0; i < tex_hist.size(); ++i){
     tex_hist[i].resize(8);
     for(int j = 0; j < tex_hist[i].size(); ++j){
-      tex_hist[i][j].resize(10, 0);
+      tex_hist[i][j].resize(10, 0.f);
     }
   }
  
   float istep_col = 10.f / 256.f;
-  float istep_ori = (4.f * 2.f ) / CV_PI;
-  for(int i = 0; i < points.size(); ++i){
-    int pt = points[i];
+  float istep_ori = (8.f ) / (CV_PI+FLT_EPSILON);
+  for(int i = 0; i < gs_pts.size(); ++i){
+    int pt = gs_pts[i];
     
     for(int j = 0; j < 3; ++j){
       const uchar * pimg = ss->planes[j].ptr<uchar>(0);
@@ -72,7 +72,7 @@ void SelectiveSearch::Vertex::calcTexHist()
       float tmp = pori_img[pt] * istep_ori;
       int ori_bin;
       if(tmp < 0)
-	ori_bin = 8 + floor(tmp);
+	ori_bin = 4.f + floor(tmp);
       else
 	ori_bin = floor(tmp);
       if(!(ori_bin < 8)){
@@ -90,7 +90,7 @@ void SelectiveSearch::Vertex::calcTexHist()
     }
   }
  
-  float isize = 1.f/((float)points.size()*3);
+  float isize = 1.f/((float)gs_pts.size()*3);
   for(int i = 0; i < tex_hist.size(); ++i){
     for(int j = 0; j < tex_hist[i].size(); ++j){
       for(int k = 0; k < tex_hist[i][j].size(); ++k){

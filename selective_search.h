@@ -14,6 +14,8 @@ class SelectiveSearch{
  public:
   class Vertex{
   public:
+    bool is_alive;
+
     //int id;
     int size;
     int index;
@@ -24,23 +26,15 @@ class SelectiveSearch{
     Point bottom_right;
     Rect region;
     
-    vector<int> points;
-    vector<vector<int>* > points_set;
+    vector<int> gs_pts;// only vertexs created by GS algorithm has 
+    vector<vector<int>* > gs_pts_set;
     //vector<int> sub_vertexs;
 
     ColHist col_hist;//color channel, color
     TexHist tex_hist;//color channel, orientation
     SelectiveSearch * ss;
 
-    Vertex(const int index, const int tstart, SelectiveSearch * ss);
-
-    struct tsurvival{
-    tsurvival() : tstart(INT_MAX), tend(INT_MAX){};
-    tsurvival(const int tstart, const int tend) : tstart(tstart),
-	tend(tend){};
-      int tstart;
-      int tend;
-    }tsurv;
+    Vertex(const int index, SelectiveSearch * ss);
     
     void init();
     void calcColHist();
@@ -107,9 +101,9 @@ class SelectiveSearch{
   float size_sim_weight;
   float tex_sim_weight;
   
-  int time;
   //int adj_table_size;
   //int vertexs_size;
+  int num_init_segs;
   int num_vertexs;
   int vindex;
 
@@ -139,9 +133,7 @@ class SelectiveSearch{
   SelectiveSearch::Vertex* mergeVertexs(Vertex *v0, Vertex *v1);
 
   void updateAdjTable(const Vertex &v);
-  
-  bool isAlive(const Vertex &v);
-  
+    
   void createSegImg(Mat &seg_img);
 
   void addEdges(Vertex &v);

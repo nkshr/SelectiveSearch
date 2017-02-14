@@ -26,22 +26,19 @@ void SelectiveSearch::Edge::calcTexSim(){
       }
     }
   }
+  CV_Assert(tex_sim <= 1);
 }
 
 void SelectiveSearch::Edge::calcFillSim(){
   Rect mrect = from->region | to->region;
   fill_sim = 1 - (mrect.area() - from->size - to->size)/(double)ss->planes[0].total();
-  if(fill_sim > 1){
-    cout << "mrect.area : " << mrect.area() << endl;
-    cout << "from->size : " << from->size << endl;
-    cout << "to->size : " << to->size << endl;
-    exit(1);
-  }
+  CV_Assert(fill_sim <= 1);
 }
 
 void SelectiveSearch::Edge::calcSizeSim(){
   CV_Assert(from->size != 0 || to->size != 0);
   size_sim = 1 - (from->size + to->size)/(float)ss->planes[0].total();
+  CV_Assert(size_sim <= 1);
 }
 
 void SelectiveSearch::Edge::calcColSim(){
@@ -54,6 +51,8 @@ void SelectiveSearch::Edge::calcColSim(){
       col_sim += min(h0[i][j], h1[i][j]);
     }
   }
+  
+  CV_Assert(col_sim <= 1);
 };
 
 void SelectiveSearch::Edge::calcSim(){
