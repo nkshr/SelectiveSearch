@@ -179,15 +179,18 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
   for(int i = 0; i < 3; ++i)
     ori_imgs[i].create(dx_imgs[i].size(), CV_32F);
 
+  const float hpi = 0.5 * CV_PI;
   for(int k = 0; k < 3; ++k){
     for(int i = 0; i < dx_imgs[k].rows; ++i){
       float * pdx_img = dx_imgs[k].ptr<float>(i);
       float * pdy_img = dy_imgs[k].ptr<float>(i);
       float * pori_img = ori_imgs[k].ptr<float>(i);
-      for(int j = 0; j < dx_imgs[k].cols; ++j){
+      for(int j = 0; j < dx_imgs[k].cols; ++j){	
 	float at = (float)atan(pdy_img[j]/pdx_img[j]);
-	if(isnan(at))
-	   at = 0;
+	if(pdx_img[j] < 0){
+	  at += CV_PI;
+	}
+	at += hpi;
 	pori_img[j] = at;
       }
     }

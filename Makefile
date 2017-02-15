@@ -1,14 +1,10 @@
 #!/bin/sh
 
 DEBUG_SS = y
-TIME_SS = y
+TIME_SS = n
 
 SRCS = sample.cpp  selective_search selective_search_edge.cpp selective_search_vertex.cpp 
 OBJS = $(addsuffix .o, $(basename $(SRCS)))
-
-CAFFE_INC_DIR = -I/home/mg6/caffe/build/include -I/home/mg6/caffe/include -I/home/mg6/caffe/build
-CAFFE_LIB_DIR = -L/home/mg6/caffe/build/lib/
-CAFFE_LIB = -lcaffe
 
 OPENCV_INC_DIR = `pkg-config --cflags-only-I opencv`
 OPENCV_LIB_DIR = `pkg-config --libs-only-L opencv`

@@ -62,19 +62,14 @@ void SelectiveSearch::Vertex::calcTexHist()
   }
  
   float istep_col = 10.f / 256.f;
-  float istep_ori = (8.f ) / (CV_PI+FLT_EPSILON);
+  float istep_ori = (8.f ) / (2*CV_PI+FLT_EPSILON);
   for(int i = 0; i < gs_pts.size(); ++i){
     int pt = gs_pts[i];
     
     for(int j = 0; j < 3; ++j){
       const uchar * pimg = ss->planes[j].ptr<uchar>(0);
       const float * pori_img = ss->ori_imgs[j].ptr<float>(0);
-      float tmp = pori_img[pt] * istep_ori;
-      int ori_bin;
-      if(tmp < 0)
-	ori_bin = 4.f + floor(tmp);
-      else
-	ori_bin = floor(tmp);
+      int ori_bin = (int)floor(pori_img[pt] * istep_ori);
       if(!(ori_bin < 8)){
 	cout << "ori_bin : " << ori_bin << endl;
 	exit(1);
