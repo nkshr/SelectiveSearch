@@ -102,20 +102,6 @@ void SelectiveSearch::Vertex::calcTexHist()
   CV_Assert(tex_hist.size() < 100000);
 }
 
-int SelectiveSearch::Vertex::assignOri(float val){
-  const float istep = 8.0 / CV_PI;
-  float ori = val * istep;
-  if(ori < 0)
-    ori += 4;
-  return floor(ori);
-}
-
-int SelectiveSearch::Vertex::assignCol(int val){
-  const float istep = 25.f / 255.f;
-  int ret = floor((float)val * istep);
-  return ret;
-}
-
 void SelectiveSearch::Vertex::calcRegion(){
   DMsg dmsg("calcRegion");
   region = Rect(top_left, Point(bottom_right.x + 1, bottom_right.y + 1));

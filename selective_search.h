@@ -40,8 +40,6 @@ class SelectiveSearch{
     void calcColHist();
     void calcTexHist();
     
-    int assignCol(int val);
-    int assignOri(float val);
     void calcRegion();
     Rect getRegion()
     {
