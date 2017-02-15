@@ -3,7 +3,7 @@
 DEBUG_SS = y
 TIME_SS = y
 
-SRCS = main.cpp  selective_search selective_search_edge.cpp selective_search_vertex.cpp 
+SRCS = sample.cpp  selective_search selective_search_edge.cpp selective_search_vertex.cpp 
 OBJS = $(addsuffix .o, $(basename $(SRCS)))
 
 CAFFE_INC_DIR = -I/home/mg6/caffe/build/include -I/home/mg6/caffe/include -I/home/mg6/caffe/build
