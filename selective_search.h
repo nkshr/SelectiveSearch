@@ -7,8 +7,8 @@ using namespace cv::ximgproc::segmentation;
 Scalar color_mapping(int segment_id);
 Scalar hsv_to_rgb(Scalar c);
 
-typedef vector<vector<double> > ColHist;
-typedef vector<vector<vector<double > > >TexHist;
+typedef vector<vector<float> > ColHist;
+typedef vector<vector<vector<float > > >TexHist;
 
 class SelectiveSearch{
  public:
@@ -106,13 +106,15 @@ class SelectiveSearch{
   int vindex;
 
   float max_overlap;
-
+  float max_grad;
+  float min_grad;
   ofstream time_ofs;
   
   Mat planes[3];
   Mat dx_imgs[3];
   Mat dy_imgs[3];
   Mat ori_imgs[3];
+  Mat grad_imgs[3];
   Mat gs_img;
   vector<Vertex*> vertexs;
   vector<vector<bool> > adj_table;

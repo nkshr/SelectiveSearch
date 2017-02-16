@@ -60,28 +60,34 @@ void SelectiveSearch::Vertex::calcTexHist()
       tex_hist[i][j].resize(10, 0.f);
     }
   }
- 
-  float istep_col = 10.f / 256.f;
-  float istep_ori = (8.f ) / (2*CV_PI+FLT_EPSILON);
+
+  const float max_grad = ss->max_grad;
+  const float min_grad = ss->min_grad; 
+  const float istep_grad = 10.f / (max_grad - min_grad + 0.05);
+  const float istep_ori = (8.f ) / (2*CV_PI+0.05);
   for(int i = 0; i < gs_pts.size(); ++i){
     int pt = gs_pts[i];
     
     for(int j = 0; j < 3; ++j){
-      const uchar * pimg = ss->planes[j].ptr<uchar>(0);
       const float * pori_img = ss->ori_imgs[j].ptr<float>(0);
+      const float * pgrad_img = ss->grad_imgs[j].ptr<float>(0);
+
       int ori_bin = (int)floor(pori_img[pt] * istep_ori);
       if(!(ori_bin < 8)){
 	cout << "ori_bin : " << ori_bin << endl;
 	exit(1);
       }
       
-      int col_bin = floor(pimg[pt] * istep_col);
-      if(!(col_bin < 10)){
-	cout << "col_bin : " << col_bin << endl;
+      int grad_bin = (int)floor((pgrad_img[pt] - min_grad) * istep_grad);
+      if(!(grad_bin < 10)){
+	cout << "grad_bin : " << grad_bin << endl;
+	cout << "grad : " << pgrad_img[pt] << endl;
+	cout << "max : " << max_grad << endl;
+	cout << "min : " << min_grad << endl;
 	exit(1);
       }
 
-      tex_hist[j][ori_bin][col_bin] += 1.0;
+      tex_hist[j][ori_bin][grad_bin] += 1.0;
     }
   }
  

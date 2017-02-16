@@ -176,22 +176,32 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
     Sobel(planes[i], dy_imgs[i], CV_32F, 0, 1);
   }
 
-  for(int i = 0; i < 3; ++i)
+  for(int i = 0; i < 3; ++i){
     ori_imgs[i].create(dx_imgs[i].size(), CV_32F);
+    grad_imgs[i] = Mat::zeros(dx_imgs[i].size(), CV_32F);
+  }
 
+  min_grad = FLT_MAX;
+  max_grad = 0;
   const float hpi = 0.5 * CV_PI;
   for(int k = 0; k < 3; ++k){
     for(int i = 0; i < dx_imgs[k].rows; ++i){
       float * pdx_img = dx_imgs[k].ptr<float>(i);
       float * pdy_img = dy_imgs[k].ptr<float>(i);
       float * pori_img = ori_imgs[k].ptr<float>(i);
+      float * pgrad_img = grad_imgs[k].ptr<float>(i);
       for(int j = 0; j < dx_imgs[k].cols; ++j){	
-	float at = (float)atan(pdy_img[j]/pdx_img[j]);
+	float angle = (float)atan(pdy_img[j]/pdx_img[j]);
 	if(pdx_img[j] < 0){
-	  at += CV_PI;
+	  angle += CV_PI;
 	}
-	at += hpi;
-	pori_img[j] = at;
+	angle += hpi;
+	pori_img[j] = angle;
+
+	const float magnitude = (float)sqrt((double)pow(pdy_img[j], 2.0) + pow((double)pdx_img[j], 2.0));
+	max_grad = magnitude > max_grad ? magnitude : max_grad;
+	min_grad = magnitude < min_grad ? magnitude : min_grad;
+	pgrad_img[j] = magnitude;
       }
     }
   }
