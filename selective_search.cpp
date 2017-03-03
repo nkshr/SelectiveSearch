@@ -110,12 +110,16 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
 
   num_vertexs = num_init_segs * 2 - 1;
 
-  vertexs.resize(num_vertexs, NULL);
+  vertexs.resize(num_vertexs);
 
   adj_table.resize(num_vertexs);
   
   for(int i = 0; i < num_vertexs; ++i){
-    adj_table[i].resize(num_vertexs, false);
+    adj_table[i].resize(num_vertexs);
+    for(int j = 0; j < num_vertexs; ++j){
+      adj_table[i][j] = false;
+    }
+    vertexs[i] = NULL;
   }
 
   vindex = 0;
@@ -143,7 +147,7 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
 
       if(i != gs_img.rows -1  && pgs_img[j + gs_img.cols] != pgs_img[j])
 	adj_table[pgs_img[j]][pgs_img[j + gs_img.cols]] = 1;
-
+      
       Vertex * vertex = vertexs[pgs_img[j]];
       vertex->gs_pts.push_back(i*gs_img.cols+ j);
       
@@ -214,14 +218,22 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
   tstart = clock();
 #endif
 
+#ifdef DEBUG_SS
+  cout << "Initializeing vertexs" << endl;
+#endif
   for(int i = 0; i < num_init_segs; ++i){
     vertexs[i]->init();
   }
-  
+
+#ifdef DEBUG_SS
+  cout << "vertexs were initialized." << endl;
+  cout << "Initializing edges" << endl;
+#endif
   //initialize edges
   for(int i = 0; i < adj_table.size(); ++i){
     for(int j = i + 1; j < adj_table.size(); ++j){
       if(adj_table[i][j]){
+	cout << i << ", " << j << endl;
 	Edge * edge = new Edge(this);
 	edge->from = vertexs[i];
 	edge->to = vertexs[j];
@@ -233,7 +245,9 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
   }
 
   edges.sort(compSims);
-
+#ifdef DEBUG_SS
+  cout << "edges were initialized" << endl;
+#endif 
 #ifdef TIME_SS
   tend = clock();
   time_ofs << "initializing edge : "
@@ -300,6 +314,7 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
 
 void SelectiveSearch::processImage(const Mat &img)
 {
+  destroy();
 #ifdef TIME_SS
   time_ofs.open("time.txt");
   if(!time_ofs.good()){
@@ -310,8 +325,7 @@ void SelectiveSearch::processImage(const Mat &img)
 #endif  
   hierarGrouping(img);
   createRegions();
-  edges.clear();
-  
+
 #ifdef TIME_SS
   time_ofs.close();
 #endif
@@ -632,7 +646,7 @@ void SelectiveSearch::addEdges(Vertex &v){
 #ifdef DEBUG_SS
       cout << "edge(" << edge->from->index
 	   << ", " << edge->to->index << ")"
-	   << "is added." << endl;
+	   << " is added." << endl;
 #endif
     }
   }
@@ -809,6 +823,19 @@ float SelectiveSearch::calcOverlap(const Rect &r0, const Rect &r1){
 
 void SelectiveSearch::getVertexs(vector<Vertex*> &vtxs){
   vtxs = vertexs;
+}
+
+void SelectiveSearch::destroy(){
+  DMsg dmsg(__PRETTY_FUNCTION__);
+  //delete gs;
+  for(list<Edge*>::iterator it = edges.begin(); it != edges.end(); ++it){
+    delete (*it);
+  }
+  
+  for(vector<Vertex*>::iterator it = vertexs.begin(); it != vertexs.end(); ++it){
+    delete (*it);
+  }
+  edges.clear();
 }
 
 void debug_print(char * str){

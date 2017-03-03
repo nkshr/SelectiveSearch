@@ -15,6 +15,7 @@ SelectiveSearch::Edge::Edge(SelectiveSearch * ss): sim(0), col_sim(0), tex_sim(0
 }
 
 void SelectiveSearch::Edge::calcTexSim(){
+  //DMsg dmsg(__PRETTY_FUNCTION__);
   TexHist &h0 = from->tex_hist;
   TexHist &h1 = to->tex_hist;
   CV_Assert(h0 != h1);
@@ -30,18 +31,29 @@ void SelectiveSearch::Edge::calcTexSim(){
 }
 
 void SelectiveSearch::Edge::calcFillSim(){
+  //DMsg dmsg(__PRETTY_FUNCTION__);
   Rect mrect = from->region | to->region;
   fill_sim = 1 - (mrect.area() - from->size - to->size)/(double)ss->planes[0].total();
-  CV_Assert(fill_sim <= 1);
+  
+  if(fill_sim > 1){
+    cout << "fill_sim " << fill_sim << endl;
+    cout << "from->size " << from->size << endl;
+    cout << "to->size " << to->size << endl;
+    cout << "mrect.area " << mrect.area() << endl;
+    cout << "ss->planes[0].total() " << ss->planes[0].total() << endl;
+    exit(1);
+  }
 }
 
 void SelectiveSearch::Edge::calcSizeSim(){
+  //DMsg dmsg(__PRETTY_FUNCTION__);
   CV_Assert(from->size != 0 || to->size != 0);
   size_sim = 1 - (from->size + to->size)/(float)ss->planes[0].total();
   CV_Assert(size_sim <= 1);
 }
 
 void SelectiveSearch::Edge::calcColSim(){
+  //DMsg dmsg(__PRETTY_FUNCTION__);
   ColHist &h0 = from->col_hist;
   ColHist &h1 = to->col_hist;
 
@@ -56,6 +68,7 @@ void SelectiveSearch::Edge::calcColSim(){
 };
 
 void SelectiveSearch::Edge::calcSim(){
+  //DMsg dmsg(__PRETTY_FUNCTION__);
   calcTexSim();
   calcFillSim();
   calcSizeSim();

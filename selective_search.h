@@ -35,7 +35,7 @@ class SelectiveSearch{
     SelectiveSearch * ss;
 
     Vertex(const int index, SelectiveSearch * ss);
-    
+    ~Vertex();
     void init();
     void calcColHist();
     void calcTexHist();
@@ -154,6 +154,7 @@ class SelectiveSearch{
 
   list<pair<float, Rect>* > regions;
 
+  void destroy();
 };
 
 class DMsg{

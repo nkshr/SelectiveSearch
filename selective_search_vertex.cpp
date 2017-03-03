@@ -13,6 +13,9 @@ using namespace cv::ximgproc::segmentation;
 SelectiveSearch::Vertex::Vertex(const int _index, SelectiveSearch * ss): is_alive(true), size(0), index(_index), base0(-1), base1(-1), top_left(INT_MAX, INT_MAX), bottom_right(0, 0), ss(ss){
 }
 
+SelectiveSearch::Vertex::~Vertex(){  
+}
+
 void SelectiveSearch::Vertex::init(){
   calcColHist();
   calcTexHist();
@@ -22,7 +25,6 @@ void SelectiveSearch::Vertex::init(){
 }
 
 void SelectiveSearch::Vertex::calcColHist(){
-  DMsg dmsg("caclColHist");
   col_hist.resize(3);
   for(int i = 0; i < col_hist.size(); ++i)
     col_hist[i].resize(25, 0.f);
@@ -52,7 +54,6 @@ void SelectiveSearch::Vertex::calcColHist(){
 
 void SelectiveSearch::Vertex::calcTexHist()
 {
-  DMsg dmsg("calcTexHist");
   tex_hist.resize(3);
   for(int i = 0; i < tex_hist.size(); ++i){
     tex_hist[i].resize(8);
@@ -104,6 +105,5 @@ void SelectiveSearch::Vertex::calcTexHist()
 }
 
 void SelectiveSearch::Vertex::calcRegion(){
-  DMsg dmsg("calcRegion");
   region = Rect(top_left, Point(bottom_right.x + 1, bottom_right.y + 1));
 }

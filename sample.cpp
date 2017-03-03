@@ -20,11 +20,13 @@ int main(int argc, char ** argv){
     cout << img_name << "couldn't be loaded" << endl;
     return 1;
   }
+  
   SelectiveSearch ss;
   ss.setColSimWeight(1.f);
   ss.setTexSimWeight(1.f);
   ss.setSizeSimWeight(1.f);
   ss.processImage(img);
 
+  ss.processImage(img);
   return 0;
 }
