@@ -25,8 +25,8 @@ int main(int argc, char ** argv){
   ss.setColSimWeight(1.f);
   ss.setTexSimWeight(1.f);
   ss.setSizeSimWeight(1.f);
-  ss.processImage(img);
-
-  ss.processImage(img);
-  return 0;
+  for(;;){
+    ss.processImage(img);
+  }
+    return 0;
 }

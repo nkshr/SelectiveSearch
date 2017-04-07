@@ -233,7 +233,6 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
   for(int i = 0; i < adj_table.size(); ++i){
     for(int j = i + 1; j < adj_table.size(); ++j){
       if(adj_table[i][j]){
-	cout << i << ", " << j << endl;
 	Edge * edge = new Edge(this);
 	edge->from = vertexs[i];
 	edge->to = vertexs[j];
