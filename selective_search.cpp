@@ -1,6 +1,8 @@
 #include <vector>
 #include <map>
 #include <fstream>
+#include <list>
+#include <iostream>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/ximgproc/segmentation.hpp>
@@ -825,7 +827,7 @@ void SelectiveSearch::getVertexs(vector<Vertex*> &vtxs){
 }
 
 void SelectiveSearch::destroy(){
-  DMsg dmsg(__PRETTY_FUNCTION__);
+//  DMsg dmsg(__PRETTY_FUNCTION__);
   //delete gs;
   for(list<Edge*>::iterator it = edges.begin(); it != edges.end(); ++it){
     delete (*it);

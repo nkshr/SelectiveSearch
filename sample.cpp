@@ -1,4 +1,6 @@
 #include <iostream>
+#include <list>
+#include <fstream>
 using namespace std;
 
 #include <opencv2/opencv.hpp>
@@ -6,6 +8,7 @@ using namespace std;
 using namespace cv;
 
 #include "selective_search.h"
+#include "opencvlib.h"
 
 int main(int argc, char ** argv){
   if(argc != 2){
@@ -17,7 +20,7 @@ int main(int argc, char ** argv){
   const char * img_name = argv[1];
   Mat img = imread(img_name);
   if(img.empty()){
-    cout << img_name << "couldn't be loaded" << endl;
+    cout << img_name << " couldn't be loaded" << endl;
     return 1;
   }
   
@@ -28,5 +31,8 @@ int main(int argc, char ** argv){
   for(;;){
     ss.processImage(img);
   }
-    return 0;
+
+  imshow("disp", img);
+  waitKey(0);
+  return 0;
 }

@@ -1,6 +1,8 @@
 #include <vector>
 #include <map>
 #include <fstream>
+#include <iostream>
+#include <list>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/ximgproc/segmentation.hpp>
