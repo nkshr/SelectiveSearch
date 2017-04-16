@@ -19,6 +19,7 @@ SelectiveSearch::Vertex::~Vertex(){
 }
 
 void SelectiveSearch::Vertex::init(){
+	DMsg dmsg("init");
   calcColHist();
   calcTexHist();
   size = gs_pts.size();
@@ -27,6 +28,7 @@ void SelectiveSearch::Vertex::init(){
 }
 
 void SelectiveSearch::Vertex::calcColHist(){
+	DMsg dmsg("calcColHist");
   col_hist.resize(3);
   for(int i = 0; i < col_hist.size(); ++i)
     col_hist[i].resize(25, 0.f);
@@ -56,6 +58,7 @@ void SelectiveSearch::Vertex::calcColHist(){
 
 void SelectiveSearch::Vertex::calcTexHist()
 {
+	DMsg dmsg("calcTexHist");
   tex_hist.resize(3);
   for(int i = 0; i < tex_hist.size(); ++i){
     tex_hist[i].resize(8);
@@ -76,13 +79,16 @@ void SelectiveSearch::Vertex::calcTexHist()
       const float * pgrad_img = ss->grad_imgs[j].ptr<float>(0);
 
       int ori_bin = (int)floor(pori_img[pt] * istep_ori);
-      if(!(ori_bin < 8)){
+      if(!(ori_bin < 8 && ori_bin >= 0)){
 	cout << "ori_bin : " << ori_bin << endl;
+	cout << "pt : " << pt << endl;
+	cout << "pori_img[pt] : " << pori_img[pt] << endl;
+	cout << "iste_ori : " << istep_ori << endl;
 	exit(1);
       }
       
       int grad_bin = (int)floor((pgrad_img[pt] - min_grad) * istep_grad);
-      if(!(grad_bin < 10)){
+      if(!(grad_bin < 10 && grad_bin >= 0)){
 	cout << "grad_bin : " << grad_bin << endl;
 	cout << "grad : " << pgrad_img[pt] << endl;
 	cout << "max : " << max_grad << endl;
@@ -107,5 +113,6 @@ void SelectiveSearch::Vertex::calcTexHist()
 }
 
 void SelectiveSearch::Vertex::calcRegion(){
+	DMsg dmsg("calcRegion");
   region = Rect(top_left, Point(bottom_right.x + 1, bottom_right.y + 1));
 }

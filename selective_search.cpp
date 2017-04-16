@@ -84,12 +84,13 @@ SelectiveSearch::SelectiveSearch(): k(300), min_size(100), sigma(0.5),
 				    tex_sim_weight(1.f),
 				    num_init_segs(0),
 				    num_vertexs(0),
-				    max_overlap(0.8){
+				    max_overlap(0.8f){
 }
 
 
 void SelectiveSearch::hierarGrouping(const Mat &img){
-  //initialize vertexs
+	DMsg dmsg("hierarGrouping");
+	//initialize vertexs
 #ifdef TIME_SS
   clock_t tstart = clock();
 #endif
@@ -184,12 +185,14 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
 
   for(int i = 0; i < 3; ++i){
     ori_imgs[i].create(dx_imgs[i].size(), CV_32F);
+	ori_imgs[i] = Mat::zeros(dx_imgs[i].size(), CV_32F);
     grad_imgs[i] = Mat::zeros(dx_imgs[i].size(), CV_32F);
   }
+  cout << "soble done" << endl;
 
   min_grad = FLT_MAX;
   max_grad = 0;
-  const float hpi = 0.5 * CV_PI;
+  const float hpi = 0.5f * (float)CV_PI;
   for(int k = 0; k < 3; ++k){
     for(int i = 0; i < dx_imgs[k].rows; ++i){
       float * pdx_img = dx_imgs[k].ptr<float>(i);
@@ -197,21 +200,17 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
       float * pori_img = ori_imgs[k].ptr<float>(i);
       float * pgrad_img = grad_imgs[k].ptr<float>(i);
       for(int j = 0; j < dx_imgs[k].cols; ++j){	
-	float angle = (float)atan(pdy_img[j]/pdx_img[j]);
-	if(pdx_img[j] < 0){
-	  angle += CV_PI;
-	}
-	angle += hpi;
-	pori_img[j] = angle;
+		  float angle = (float)fastAtan2(pdy_img[j], pdx_img[j]);
+			pori_img[j] = angle;
 
-	const float magnitude = (float)sqrt((double)pow(pdy_img[j], 2.0) + pow((double)pdx_img[j], 2.0));
-	max_grad = magnitude > max_grad ? magnitude : max_grad;
-	min_grad = magnitude < min_grad ? magnitude : min_grad;
-	pgrad_img[j] = magnitude;
+			const float magnitude = (float)sqrt((double)pow(pdy_img[j], 2.0) + pow((double)pdx_img[j], 2.0));
+			max_grad = magnitude > max_grad ? magnitude : max_grad;
+			min_grad = magnitude < min_grad ? magnitude : min_grad;
+			pgrad_img[j] = magnitude;
       }
     }
   }
-
+  cout << "assign label" << endl;
 #ifdef TIME_SS
   clock_t tend = clock();
   time_ofs << "initializing vertex : "
@@ -315,6 +314,7 @@ void SelectiveSearch::hierarGrouping(const Mat &img){
 
 void SelectiveSearch::processImage(const Mat &img)
 {
+	DMsg dmsg("processImage");
   destroy();
 #ifdef TIME_SS
   time_ofs.open("time.txt");
@@ -358,9 +358,6 @@ SelectiveSearch::Vertex *  SelectiveSearch::mergeVertexs(Vertex  * v0, Vertex * 
 #endif 
   
   Vertex * v =  new Vertex(vindex++, this);
-#ifdef DEBUG_SS
-  cout << "vertex " << v->index << " was constructed at time " << time << endl;
-#endif 
   
   for(int i = 0; i < v0->gs_pts_set.size(); ++i){
     v->gs_pts_set.push_back(v0->gs_pts_set[i]);
@@ -507,58 +504,58 @@ void drawBoundaries(const Mat &seg_img, const Scalar &bcolor, Mat &img)
     uchar * pimg = img.ptr<uchar>(i);
     for(int j = 1; j < seg_img.cols - 1; ++j){
       if(pseg_img[j-1-seg_img.cols] != pseg_img[j]){
-	pimg[j*3] = bcolor[0];
-        pimg[j*3+1] = bcolor[1];
-	pimg[j*3+2] = bcolor[2];
+	pimg[j*3] = saturate_cast<uchar>(bcolor[0]);
+        pimg[j*3+1] = saturate_cast<uchar>(bcolor[1]);
+	pimg[j*3+2] = saturate_cast<uchar>(bcolor[2]);
 	continue;
       }
 
       if(pseg_img[j-seg_img.cols] != pseg_img[j]){
-	pimg[j*3] = bcolor[0];
-	pimg[j*3+1] = bcolor[1];
-	pimg[j*3+2] = bcolor[2];
+	pimg[j*3] = saturate_cast<uchar>(bcolor[0]);
+	pimg[j*3+1] = saturate_cast<uchar>(bcolor[1]);
+	pimg[j*3+2] = saturate_cast<uchar>(bcolor[2]);
 	continue;
       }
 
       if(pseg_img[j + 1 -seg_img.cols] != pseg_img[j]){
-	pimg[j*3] = bcolor[0];
-	pimg[j*3+1] = bcolor[1];
-	pimg[j*3+2] = bcolor[2];
+	pimg[j*3] = saturate_cast<uchar>(bcolor[0]);
+	pimg[j*3+1] = saturate_cast<uchar>(bcolor[1]);
+	pimg[j*3+2] = saturate_cast<uchar>(bcolor[2]);
 	continue;
       }
 
       if(pseg_img[j-1] != pseg_img[j]){
-	pimg[j*3] = bcolor[0];
-	pimg[j*3+1] = bcolor[1];
-	pimg[j*3+2] = bcolor[2];
+	pimg[j*3] = saturate_cast<uchar>(bcolor[0]);
+	pimg[j*3+1] = saturate_cast<uchar>(bcolor[1]);
+	pimg[j*3+2] = saturate_cast<uchar>(bcolor[2]);
 	continue;
       }
 
       if(pseg_img[j+1] != pseg_img[j]){
-	pimg[j*3] = bcolor[0];
-	pimg[j*3+1] = bcolor[1];
-	pimg[j*3+2] = bcolor[2];
+	pimg[j*3] = saturate_cast<uchar>(bcolor[0]);
+	pimg[j*3+1] = saturate_cast<uchar>(bcolor[1]);
+	pimg[j*3+2] = saturate_cast<uchar>(bcolor[2]);
 	continue;
       }
 
       if(pseg_img[j - 1 + seg_img.cols] != pseg_img[j]){
-	pimg[j*3] = bcolor[0];
-	pimg[j*3+1] = bcolor[1];
-	pimg[j*3+2] = bcolor[2];
+	pimg[j*3] = saturate_cast<uchar>(bcolor[0]);
+	pimg[j*3+1] = saturate_cast<uchar>(bcolor[1]);
+	pimg[j*3+2] = saturate_cast<uchar>(bcolor[2]);
 	continue;
       }
 
       if(pseg_img[j + seg_img.cols] != pseg_img[j]){
-	pimg[j*3] = bcolor[0];
-	pimg[j*3+1] = bcolor[1];
-	pimg[j*3+2] = bcolor[2];
+	pimg[j*3] = saturate_cast<uchar>(bcolor[0]);
+	pimg[j*3+1] = saturate_cast<uchar>(bcolor[1]);
+	pimg[j*3+2] = saturate_cast<uchar>(bcolor[2]);
 	continue;
       }
 
       if(pseg_img[j + 1 + seg_img.cols] != pseg_img[j]){
-	pimg[j*3] = bcolor[0];
-	pimg[j*3+1] = bcolor[1];
-	pimg[j*3+2] = bcolor[2];
+	pimg[j*3] = saturate_cast<uchar>(bcolor[0]);
+	pimg[j*3+1] = saturate_cast<uchar>(bcolor[1]);
+	pimg[j*3+2] = saturate_cast<uchar>(bcolor[2]);
 	continue;
       }
 
@@ -827,7 +824,7 @@ void SelectiveSearch::getVertexs(vector<Vertex*> &vtxs){
 }
 
 void SelectiveSearch::destroy(){
-//  DMsg dmsg(__PRETTY_FUNCTION__);
+  DMsg dmsg("destroy");
   //delete gs;
   for(list<Edge*>::iterator it = edges.begin(); it != edges.end(); ++it){
     delete (*it);

@@ -161,12 +161,12 @@ class DMsg{
  public:
   string buf;
     DMsg(string buf): buf(buf){
-#ifdef DEBUG_SS
+#ifdef _DEBUG
     cout << "Entering " << buf << endl;
 #endif 
   }
     ~DMsg(){
-#ifdef DEBUG_SS
+#ifdef _DEBUG
     cout << "Exiting " << buf << endl;
 #endif
   }
