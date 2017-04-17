@@ -22,7 +22,7 @@ void SelectiveSearch::Vertex::init(){
 	DMsg dmsg("init");
   calcColHist();
   calcTexHist();
-  size = gs_pts.size();
+  size = (int)gs_pts.size();
   calcRegion();
   gs_pts_set.push_back(&gs_pts);
 }
@@ -37,7 +37,7 @@ void SelectiveSearch::Vertex::calcColHist(){
   for(int i = 0; i < gs_pts.size(); ++i){
     for(int j = 0; j < 3; ++j){
       const uchar * p = ss->planes[j].ptr<uchar>(0);
-      int bin = floor(p[gs_pts[i]] * istep);
+      int bin = saturate_cast<int>(floor(p[gs_pts[i]] * istep));
       if(!(bin < 25)){
 	cout << "bin : " <<  bin << endl;
 	exit(1);
@@ -69,8 +69,8 @@ void SelectiveSearch::Vertex::calcTexHist()
 
   const float max_grad = ss->max_grad;
   const float min_grad = ss->min_grad; 
-  const float istep_grad = 10.f / (max_grad - min_grad + 0.05);
-  const float istep_ori = (8.f ) / (2*CV_PI+0.05);
+  const float istep_grad = 10.f / (max_grad - min_grad + 0.05f);
+  const float istep_ori = (8.f ) / (360.f+0.05f);
   for(int i = 0; i < gs_pts.size(); ++i){
     int pt = gs_pts[i];
     
