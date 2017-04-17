@@ -8,7 +8,10 @@ using namespace std;
 using namespace cv;
 
 #include "selective_search.h"
+
+#ifdef _WIN32
 #include "opencvlib.h"
+#endif
 
 int main(int argc, char ** argv){
   if(argc != 2){
